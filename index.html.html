@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1C2333">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HSK Manager">
+<title>HSK Manager</title>
+<style>
+  :root{
+    --bg:#F5F3EE;
+    --surface:#FFFFFF;
+    --surface-2:#EEEBE3;
+    --ink:#1C2333;
+    --ink-soft:#5B6272;
+    --line:#DEDACF;
+    --accent:#B8862E;
+    --accent-ink:#5C4113;
+    --accent-soft:#F1E4C6;
+    --green:#3F9142;
+    --green-soft:#E3F0E2;
+    --amber:#C98A1F;
+    --amber-soft:#F6EAD1;
+    --orange:#C1631F;
+    --orange-soft:#F5E1CE;
+    --red:#B8433A;
+    --red-soft:#F5DEDB;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(28,35,51,0.06), 0 4px 14px rgba(28,35,51,0.06);
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  [data-theme="dark"]{
+    --bg:#12141C;
+    --surface:#1B1F2B;
+    --surface-2:#232838;
+    --ink:#EDEBE3;
+    --ink-soft:#A2A8BB;
+    --line:#2E3345;
+    --accent:#D9A94A;
+    --accent-ink:#2A1F0B;
+    --accent-soft:#3A2E13;
+    --green:#5FB662;
+    --green-soft:#1C2E1D;
+    --amber:#E0A93B;
+    --amber-soft:#332711;
+    --orange:#E08A46;
+    --orange-soft:#332210;
+    --red:#E06B60;
+    --red-soft:#331B18;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:none;
+  }
+  h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-0.01em;}
+  p{margin:0;}
+  button{font-family:inherit;}
+  input,select,textarea{font-family:inherit;font-size:15px;}
+
+  .eyebrow{
+    text-transform:uppercase;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.11em;
+    color:var(--ink-soft);
+  }
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+
+  /* App shell */
+  #app{display:flex;min-height:100%;}
+
+  /* Top bar */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;height:58px;
+    background:var(--ink);
+    color:#fff;
+    display:flex;align-items:center;gap:12px;
+    padding:0 10px 0 6px;
+    z-index:50;
+  }
+  [data-theme="dark"] .topbar{background:#0C0E14;border-bottom:1px solid var(--line);}
+  .iconbtn{
+    width:42px;height:42px;border-radius:10px;border:none;background:transparent;color:#fff;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+  }
+  .iconbtn:active{background:rgba(255,255,255,0.12);}
+  .topbar-title{font-size:16px;font-weight:700;letter-spacing:0.01em;flex:1;}
+  .topbar-title small{display:block;font-size:10.5px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:var(--accent);opacity:0.95;}
+  .bell-dot{position:relative;}
+  .bell-dot::after{
+    content:"";position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;
+    background:var(--red);border:2px solid var(--ink);display:none;
+  }
+  .bell-dot.has-alert::after{display:block;}
+  [data-theme="dark"] .bell-dot.has-alert::after{border-color:#0C0E14;}
+
+  /* Drawer */
+  .scrim{position:fixed;inset:0;background:rgba(12,14,20,0.45);z-index:60;opacity:0;pointer-events:none;transition:opacity .18s ease;}
+  .scrim.open{opacity:1;pointer-events:auto;}
+  .drawer{
+    position:fixed;top:0;bottom:0;left:0;width:278px;max-width:82vw;
+    background:var(--surface);z-index:70;
+    transform:translateX(-100%);transition:transform .22s cubic-bezier(.4,0,.2,1);
+    display:flex;flex-direction:column;
+    box-shadow:2px 0 18px rgba(0,0,0,0.18);
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{padding:20px 18px 14px;border-bottom:1px solid var(--line);}
+  .drawer-head .brand{font-size:19px;font-weight:800;letter-spacing:-0.01em;}
+  .drawer-head .brand span{color:var(--accent);}
+  .drawer-head .sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .drawer nav{flex:1;overflow-y:auto;padding:10px;}
+  .drawer-item{
+    display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;
+    color:var(--ink);text-decoration:none;font-size:14.5px;font-weight:600;cursor:pointer;
+    border:none;background:transparent;width:100%;text-align:left;
+  }
+  .drawer-item .ic{width:20px;text-align:center;flex-shrink:0;opacity:0.8;}
+  .drawer-item:active{background:var(--surface-2);}
+  .drawer-item.active{background:var(--accent-soft);color:var(--accent-ink);}
+  .drawer-item.active .ic{opacity:1;}
+  .drawer-sep{height:1px;background:var(--line);margin:10px 6px;}
+  .drawer-group-label{font-size:10.5px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--ink-soft);padding:12px 12px 4px;}
+
+  /* Main */
+  main{flex:1;padding:70px 14px 34px;max-width:760px;margin:0 auto;width:100%;}
+  .section{display:none;}
+  .section.active{display:block;animation:fadein .15s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-bottom:14px;box-shadow:var(--shadow);
+  }
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;gap:8px;}
+  .card-head h3{font-size:15px;}
+  .card-head .hint{font-size:11.5px;color:var(--ink-soft);}
+
+  .page-title{font-size:22px;margin-bottom:2px;}
+  .page-sub{color:var(--ink-soft);font-size:13px;margin-bottom:16px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  @media (max-width:420px){.grid3{grid-template-columns:repeat(2,1fr);}}
+
+  .stat-tile{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 13px;
+    display:flex;flex-direction:column;gap:5px;
+  }
+  .stat-tile .v{font-size:23px;font-weight:800;font-family:var(--mono);}
+  .stat-tile .l{font-size:11px;color:var(--ink-soft);font-weight:600;letter-spacing:0.02em;}
+  .stat-tile.warn .v{color:var(--orange);}
+  .stat-tile.bad .v{color:var(--red);}
+  .stat-tile.good .v{color:var(--green);}
+
+  .quicklink{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 6px;
+    cursor:pointer;text-align:center;
+  }
+  .quicklink:active{background:var(--surface-2);}
+  .quicklink .ic{font-size:20px;}
+  .quicklink .l{font-size:11.5px;font-weight:700;}
+
+  label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;letter-spacing:0.01em;}
+  input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
+    width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;
+    background:var(--bg);color:var(--ink);outline:none;
+  }
+  [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea{background:var(--surface-2);}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  textarea{resize:vertical;min-height:64px;}
+  .field{margin-bottom:12px;}
+  .row{display:flex;gap:10px;}
+  .row > .field{flex:1;}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    padding:11px 16px;border-radius:11px;border:none;font-weight:700;font-size:14px;
+    cursor:pointer;background:var(--ink);color:#fff;
+  }
+  [data-theme="dark"] .btn{background:var(--accent);color:var(--accent-ink);}
+  .btn:active{opacity:0.85;}
+  .btn.block{width:100%;}
+  .btn.accent{background:var(--accent);color:var(--accent-ink);}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .btn.danger{background:var(--red);color:#fff;}
+  .btn.sm{padding:7px 12px;font-size:12.5px;border-radius:9px;}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;}
+  .chip.green{background:var(--green-soft);color:var(--green);}
+  .chip.amber{background:var(--amber-soft);color:var(--amber);}
+  .chip.orange{background:var(--orange-soft);color:var(--orange);}
+  .chip.red{background:var(--red-soft);color:var(--red);}
+  .chip.neutral{background:var(--surface-2);color:var(--ink-soft);}
+
+  .floor-row{
+    display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);
+  }
+  .floor-row:last-child{border-bottom:none;}
+  .floor-badge{
+    width:38px;height:38px;border-radius:10px;background:var(--surface-2);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;
+  }
+  .floor-main{flex:1;min-width:0;}
+  .floor-main .t1{font-weight:700;font-size:13.5px;}
+  .floor-main .t2{font-size:11.5px;color:var(--ink-soft);}
+
+  .bar-track{height:9px;border-radius:6px;background:var(--surface-2);overflow:hidden;margin-top:6px;}
+  .bar-fill{height:100%;border-radius:6px;transition:width .2s ease;}
+
+  .gauge-wrap{display:flex;align-items:center;gap:10px;}
+  .gauge svg{display:block;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);padding:6px 8px;border-bottom:1px solid var(--line);}
+  td{padding:8px 8px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+
+  .empty-state{padding:26px 10px;text-align:center;color:var(--ink-soft);}
+  .empty-state .ic{font-size:26px;margin-bottom:8px;}
+  .empty-state .t{font-weight:700;color:var(--ink);font-size:14px;margin-bottom:3px;}
+  .empty-state .d{font-size:12.5px;}
+
+  .tabbar{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;}
+  .tabbtn{
+    flex-shrink:0;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);
+    font-size:12.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;
+  }
+  .tabbtn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  [data-theme="dark"] .tabbtn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+
+  .note-item{padding:11px 0;border-bottom:1px solid var(--line);}
+  .note-item:last-child{border-bottom:none;}
+  .note-item .meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .note-item .date{font-size:11px;color:var(--ink-soft);}
+  .note-item .txt{font-size:13.5px;white-space:pre-wrap;}
+  .pin-btn{background:none;border:none;cursor:pointer;font-size:15px;opacity:0.4;}
+  .pin-btn.pinned{opacity:1;}
+
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-dow{font-size:10px;font-weight:700;text-align:center;color:var(--ink-soft);padding-bottom:4px;}
+  .cal-cell{
+    aspect-ratio:1;border-radius:9px;background:var(--surface-2);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;position:relative;
+    gap:2px;
+  }
+  .cal-cell.empty{background:transparent;cursor:default;}
+  .cal-cell.today{outline:2px solid var(--accent);}
+  .cal-cell .dots{display:flex;gap:2px;}
+  .cal-cell .dot{width:4px;height:4px;border-radius:50%;}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .cal-nav .m{font-weight:800;font-size:15px;}
+
+  .toast-wrap{position:fixed;top:66px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:200;pointer-events:none;}
+  .toast{
+    background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;
+    box-shadow:0 6px 18px rgba(0,0,0,0.22);max-width:88vw;text-align:center;
+    animation:toastin .18s ease;
+  }
+  @keyframes toastin{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+
+  .switch{position:relative;width:44px;height:25px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider-tog{position:absolute;cursor:pointer;inset:0;background:var(--surface-2);border-radius:999px;transition:.15s;border:1px solid var(--line);}
+  .slider-tog::before{content:"";position:absolute;height:19px;width:19px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+  input:checked + .slider-tog{background:var(--accent);}
+  input:checked + .slider-tog::before{transform:translateX(19px);}
+  .settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-row .t{font-weight:700;font-size:13.5px;}
+  .settings-row .d{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+
+  #printArea{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;}
+  }
+
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;}
+
+  a{color:var(--accent-ink);}
+  .link-btn{background:none;border:none;color:var(--accent-ink);font-weight:700;font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0;}
+  [data-theme="dark"] .link-btn{color:var(--accent);}
+
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+</style>
+</head>
+<body data-theme="light">
+<div id="app">
+
+  <div class="topbar">
+    <button class="iconbtn" id="menuBtn" aria-label="Menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="topbar-title"><small>HSK Operations</small><span id="topbarLabel">Dashboard</span></div>
+    <button class="iconbtn bell-dot" id="bellBtn" aria-label="Alerts">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="scrim" id="scrim"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-head">
+      <div class="brand">HSK <span>Manager</span></div>
+      <div class="sub">Housekeeping Operations Assistant</div>
+    </div>
+    <nav id="drawerNav">
+      <button class="drawer-item" data-target="dashboard"><span class="ic">🏠</span>Dashboard</button>
+      <div class="drawer-group-label">Operations</div>
+      <button class="drawer-item" data-target="trolleys"><span class="ic">🧺</span>Trolley Tracker</button>
+      <button class="drawer-item" data-target="laundry"><span class="ic">🚚</span>Laundry Tracker</button>
+      <button class="drawer-item" data-target="storage"><span class="ic">📦</span>Dirty Linen Storage</button>
+      <button class="drawer-item" data-target="capacity"><span class="ic">🗄️</span>Dirty Trolley Capacity</button>
+      <button class="drawer-item" data-target="towels"><span class="ic">🧻</span>Towel Bags</button>
+      <button class="drawer-item" data-target="checklist"><span class="ic">✅</span>Daily Checklist</button>
+      <div class="drawer-group-label">Planning</div>
+      <button class="drawer-item" data-target="calendar"><span class="ic">📅</span>Calendar</button>
+      <button class="drawer-item" data-target="orders"><span class="ic">🛒</span>Orders</button>
+      <button class="drawer-item" data-target="notes"><span class="ic">📝</span>Notes</button>
+      <div class="drawer-group-label">Insights</div>
+      <button class="drawer-item" data-target="stats"><span class="ic">📊</span>Statistics</button>
+      <button class="drawer-item" data-target="reports"><span class="ic">🖨️</span>Reports</button>
+      <div class="drawer-group-label">System</div>
+      <button class="drawer-item" data-target="settings"><span class="ic">⚙️</span>Settings</button>
+    </nav>
+    <div style="padding:14px 18px;font-size:10.5px;color:var(--ink-soft);border-top:1px solid var(--line);">Works fully offline · Data stored on this device only</div>
+  </div>
+
+  <main>
+
+    <!-- DASHBOARD -->
+    <section class="section active" id="sec-dashboard">
+      <div class="page-title">Good day 👋</div>
+      <div class="page-sub" id="dashDateLine">—</div>
+
+      <div class="grid3" style="margin-bottom:14px;">
+        <div class="stat-tile" id="tileClean"><div class="v">0</div><div class="l">Clean trolleys</div></div>
+        <div class="stat-tile" id="tileDirty"><div class="v">0</div><div class="l">Dirty trolleys</div></div>
+        <div class="stat-tile" id="tileUnpacked"><div class="v">0</div><div class="l">Unpacked total</div></div>
+        <div class="stat-tile" id="tileStorage"><div class="v">0%</div><div class="l">Dirty linen storage</div></div>
+        <div class="stat-tile" id="tileTowels"><div class="v">0</div><div class="l">Towel bags full</div></div>
+        <div class="stat-tile" id="tileTasks"><div class="v">0</div><div class="l">Tasks left today</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Today's recurring tasks</h3><span class="hint" id="dashTaskProgress"></span></div>
+        <div id="dashTaskList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Jump to</h3></div>
+        <div class="grid3">
+          <div class="quicklink" data-target="trolleys"><div class="ic">🧺</div><div class="l">Trolleys</div></div>
+          <div class="quicklink" data-target="laundry"><div class="ic">🚚</div><div class="l">Laundry</div></div>
+          <div class="quicklink" data-target="towels"><div class="ic">🧻</div><div class="l">Towel Bags</div></div>
+          <div class="quicklink" data-target="calendar"><div class="ic">📅</div><div class="l">Calendar</div></div>
+          <div class="quicklink" data-target="orders"><div class="ic">🛒</div><div class="l">Orders</div></div>
+          <div class="quicklink" data-target="reports"><div class="ic">🖨️</div><div class="l">Reports</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Quick notes</h3><span class="hint">Auto-saved</span></div>
+        <textarea id="quickNotes" placeholder="Jot something down while you're on the floor…" style="min-height:90px;"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>House rules — always on</h3></div>
+        <div style="font-size:13px;line-height:1.7;">
+          <div><b>No sofa:</b> Rooms 605, 205, 207, 405, 701, 801</div>
+          <div><b>Room 501:</b> Linen change (22 pcs) — every Tuesday & Friday</div>
+          <div><b>Approved hours:</b> From the 21st until 09:00</div>
+          <div><b>Weekends:</b> Handle Widerøe · Handle DHL · Handle Rooms</div>
+          <div><b>Ordering linen:</b> 2 mixed towel pallets + 2 mixed bed sheet pallets</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Summer workload reference</h3></div>
+        <table>
+          <tr><th>Who</th><th>Departures</th><th>Stayovers</th></tr>
+          <tr><td>Me</td><td class="num">14</td><td class="num">7</td></tr>
+          <tr><td>Weekend responsible</td><td class="num">10</td><td class="num">—</td></tr>
+          <tr><td>FD</td><td class="num">16</td><td class="num">—</td></tr>
+          <tr><td>6-hour shift</td><td class="num">12</td><td class="num">—</td></tr>
+          <tr><td>4-hour shift</td><td class="num">8–10</td><td class="num">—</td></tr>
+        </table>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin-top:8px;">If a guest extends their stay with no confirmation message, follow the original agreed schedule.</p>
+      </div>
+    </section>
+
+    <!-- TROLLEY TRACKER -->
+    <section class="section" id="sec-trolleys">
+      <div class="page-title">Trolley Tracker</div>
+      <div class="page-sub">Received, returned, and unpacked trolleys by floor</div>
+
+      <div class="card">
+        <div class="card-head"><h3>Today's movement</h3></div>
+        <div class="row">
+          <div class="field"><label>Received clean trolleys today</label><input type="number" min="0" id="trReceived"></div>
+          <div class="field"><label>Returned dirty trolleys today</label><input type="number" min="0" id="trReturned"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Clean trolleys — Floor 2 (current)</label><input type="number" min="0" id="trF2Clean"></div>
+          <div class="field"><label>Dirty trolleys — Floor 2 (current)</label><input type="number" min="0" id="trF2Dirty"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Unpacked trolleys by floor</h3><span class="hint" id="trTotals"></span></div>
+        <div id="trFloorList"></div>
+      </div>
+    </section>
+
+    <!-- LAUNDRY TRACKER -->
+    <section class="section" id="sec-laundry">
+      <div class="page-title">Laundry Tracker</div>
+      <div class="page-sub">Log every delivery and pickup</div>
+
+      <div class="tabbar">
+        <button class="tabbtn active" data-lt="delivery">Delivery</button>
+        <button class="tabbtn" data-lt="pickup">Pickup</button>
+      </div>
+
+      <div class="card" id="ltDeliveryForm">
+        <div class="card-head"><h3>New delivery</h3></div>
+        <div class="row">
+          <div class="field"><label>Date</label><input type="date" id="ldDate"></div>
+          <div class="field"><label>Time</label><input type="time" id="ldTime"></div>
+        </div>
+        <div class="field"><label>Number of trolleys</label><input type="number" min="0" id="ldTrolleys"></div>
+        <div class="field"><label>Notes</label><input type="text" id="ldNotes" placeholder="Optional"></div>
+        <button class="btn accent block" id="ldSave">Save delivery</button>
+      </div>
+
+      <div class="card" id="ltPickupForm" style="display:none;">
+        <div class="card-head"><h3>New pickup</h3></div>
+        <div class="row">
+          <div class="field"><label>Date</label><input type="date" id="lpDate"></div>
+          <div class="field"><label>Time</label><input type="time" id="lpTime"></div>
+        </div>
+        <div class="field"><label>Number of trolleys</label><input type="number" min="0" id="lpTrolleys"></div>
+        <div class="field"><label>Notes</label><input type="text" id="lpNotes" placeholder="Optional"></div>
+        <button class="btn accent block" id="lpSave">Save pickup</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>History</h3><input type="text" id="laundrySearch" placeholder="Search notes…" style="width:130px;padding:6px 9px;font-size:12px;"></div>
+        <div id="laundryHistory"></div>
+      </div>
+    </section>
+
+    <!-- DIRTY LINEN STORAGE -->
+    <section class="section" id="sec-storage">
+      <div class="page-title">Dirty Linen Storage</div>
+      <div class="page-sub">How full is storage on each floor?</div>
+      <div class="card"><div id="storageFloorList"></div></div>
+    </section>
+
+    <!-- DIRTY TROLLEY CAPACITY -->
+    <section class="section" id="sec-capacity">
+      <div class="page-title">Dirty Trolley Capacity</div>
+      <div class="page-sub">Estimated fullness of dirty trolley storage by floor</div>
+      <div class="card"><div id="capacityFloorList"></div></div>
+    </section>
+
+    <!-- TOWEL BAGS -->
+    <section class="section" id="sec-towels">
+      <div class="page-title">Towel Bag Tracker</div>
+      <div class="page-sub">Two bags per floor · marking "Full" triggers a reminder</div>
+      <div id="towelFloorList"></div>
+    </section>
+
+    <!-- CHECKLIST -->
+    <section class="section" id="sec-checklist">
+      <div class="page-title">Daily Checklist</div>
+      <div class="page-sub" id="checklistDateLine">—</div>
+      <div class="btn-row" style="margin-bottom:14px;">
+        <button class="btn ghost sm" id="clPrev">← Previous day</button>
+        <button class="btn ghost sm" id="clToday">Today</button>
+        <button class="btn ghost sm" id="clNext">Next day →</button>
+      </div>
+      <div class="card"><div id="checklistList"></div></div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="section" id="sec-calendar">
+      <div class="page-title">Calendar</div>
+      <div class="page-sub">Recurring tasks, special dates, and your own events — all offline</div>
+      <div class="card">
+        <div class="cal-nav">
+          <button class="iconbtn" style="color:var(--ink);" id="calPrevM">‹</button>
+          <div class="m" id="calMonthLabel">—</div>
+          <button class="iconbtn" style="color:var(--ink);" id="calNextM">›</button>
+        </div>
+        <div class="cal-grid" id="calDowRow"></div>
+        <div class="cal-grid" id="calGrid" style="margin-top:4px;"></div>
+        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;font-size:11px;color:var(--ink-soft);">
+          <span><span class="dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:4px;"></span>Recurring task</span>
+          <span><span class="dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:4px;"></span>Special date</span>
+          <span><span class="dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px;"></span>Your event</span>
+        </div>
+      </div>
+      <div class="card" id="calDayCard">
+        <div class="card-head"><h3 id="calDaySelLabel">Select a day</h3></div>
+        <div id="calDayTasks"></div>
+        <div class="field" style="margin-top:10px;"><label>Add an event on this day</label><input type="text" id="calNewEventTitle" placeholder="e.g. Deep clean — Floor 5"></div>
+        <button class="btn accent sm" id="calAddEvent">Add event</button>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section class="section" id="sec-orders">
+      <div class="page-title">Orders</div>
+      <div class="page-sub">Quick linen orders, logged automatically</div>
+      <div class="card">
+        <div class="btn-row">
+          <button class="btn accent" id="orderBoth">Place linen order<br><span style="font-weight:500;font-size:11px;">2 towel + 2 bed sheet pallets</span></button>
+        </div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn ghost sm" id="orderTowels">+ 2 Mixed Towel Pallets</button>
+          <button class="btn ghost sm" id="orderSheets">+ 2 Mixed Bed Sheet Pallets</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Order history</h3></div>
+        <div id="orderHistory"></div>
+      </div>
+    </section>
+
+    <!-- NOTES -->
+    <section class="section" id="sec-notes">
+      <div class="page-title">Notes</div>
+      <div class="page-sub">Free text, searchable, pinnable</div>
+      <div class="card">
+        <textarea id="newNoteText" placeholder="Write a note…"></textarea>
+        <button class="btn accent block" style="margin-top:10px;" id="addNoteBtn">Add note</button>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>All notes</h3><input type="text" id="noteSearch" placeholder="Search…" style="width:110px;padding:6px 9px;font-size:12px;"></div>
+        <div id="notesList"></div>
+      </div>
+    </section>
+
+    <!-- STATISTICS -->
+    <section class="section" id="sec-stats">
+      <div class="page-title">Statistics</div>
+      <div class="page-sub">Trends build up the more you use the app day to day</div>
+
+      <div class="grid2" style="margin-bottom:14px;">
+        <div class="stat-tile"><div class="v" id="statAvgTrolley">0</div><div class="l">Avg. trolleys / day</div></div>
+        <div class="stat-tile"><div class="v" id="statAvgLaundry">0</div><div class="l">Avg. laundry / delivery</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Daily trolley movement</h3><span class="hint">Last 14 days</span></div>
+        <div id="chartTrolley"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Dirty storage trend</h3><span class="hint">Average % across floors</span></div>
+        <div id="chartStorage"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Laundry movement</h3><span class="hint">Deliveries vs pickups (trolleys)</span></div>
+        <div id="chartLaundry"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Towel bag collections</h3><span class="hint">Times marked Full → collected</span></div>
+        <div id="chartTowels"></div>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section class="section" id="sec-reports">
+      <div class="page-title">Reports</div>
+      <div class="page-sub">One-tap daily report — save as PDF using your browser's print dialog</div>
+      <div class="card">
+        <button class="btn accent block" id="genReportBtn">Generate today's report</button>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin-top:10px;">This opens your device's print dialog. Choose "Save as PDF" as the destination to keep an offline copy.</p>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Preview</h3></div>
+        <div id="reportPreview" style="font-size:13px;line-height:1.7;"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="section" id="sec-settings">
+      <div class="page-title">Settings</div>
+      <div class="page-sub">Backup, theme, and notifications</div>
+
+      <div class="card">
+        <div class="settings-row">
+          <div><div class="t">Dark mode</div><div class="d">Easier on the eyes at night</div></div>
+          <label class="switch"><input type="checkbox" id="darkModeToggle"><span class="slider-tog"></span></label>
+        </div>
+        <div class="settings-row">
+          <div><div class="t">Notifications</div><div class="d">Reminders while this app is open</div></div>
+          <button class="btn ghost sm" id="notifBtn">Enable</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Backup &amp; restore</h3></div>
+        <p style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">All data stays on this device. Back it up regularly, especially before clearing browser data or switching phones.</p>
+        <div class="btn-row">
+          <button class="btn ghost sm" id="backupBtn">⬇ Export backup (JSON)</button>
+          <button class="btn ghost sm" id="restoreBtn">⬆ Restore from file</button>
+          <input type="file" id="restoreFile" accept="application/json" style="display:none;">
+        </div>
+        <div class="btn-row" style="margin-top:8px;">
+          <button class="btn ghost sm" id="exportCsvBtn">⬇ Export all data (CSV / Excel)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Danger zone</h3></div>
+        <button class="btn danger sm" id="resetBtn">Erase all data on this device</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>About</h3></div>
+        <p style="font-size:12px;color:var(--ink-soft);line-height:1.6;">
+          HSK Manager works completely offline — no account, no server, no internet connection required.
+          Everything you enter is stored only in this browser on this device. For always-on background
+          notifications and direct phone calendar access, use the companion Android app.
+        </p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div id="printArea"></div>
+
+<script>
+"use strict";
+
+/* ============ CONSTANTS ============ */
+var FLOORS = [2,3,4,5,6,7,8];
+var NO_SOFA_ROOMS = [605,205,207,405,701,801];
+var STORAGE_KEY = 'hskManagerData_v1';
+var DOW_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var MONTH_LABELS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+/* ============ STATE ============ */
+function defaultState(){
+  var floorsObj = {}; FLOORS.forEach(function(f){ floorsObj[f] = {unpacked:0, status:'clean'}; });
+  var storageObj = {}; FLOORS.forEach(function(f){ storageObj[f]=0; });
+  var capacityObj = {}; FLOORS.forEach(function(f){ capacityObj[f]=0; });
+  var towelObj = {}; FLOORS.forEach(function(f){ towelObj[f]={bag1:'Empty',bag2:'Empty'}; });
+  return {
+    quickNotes:'',
+    trolleys:{ receivedToday:0, returnedToday:0, f2Clean:0, f2Dirty:0, floors:floorsObj, dailyLog:[] },
+    laundry:{ deliveries:[], pickups:[] },
+    storage:{ floors: storageObj, dailyLog:[] },
+    capacity:{ floors: capacityObj },
+    towels:{ floors: towelObj, collectionLog:[] },
+    checklist:{ completions:{} },
+    calendarEvents:[],
+    orders:{ history:[] },
+    notes:{ list:[] },
+    settings:{ theme:'light', notifEnabled:false, lastTaskReminderDate:null, lastSpecialReminderDate:null }
+  };
+}
+var state = null;
+
+function loadState(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw){ state = defaultState(); return; }
+    var parsed = JSON.parse(raw);
+    var def = defaultState();
+    // shallow-merge to survive future schema additions
+    state = Object.assign({}, def, parsed);
+    state.trolleys = Object.assign({}, def.trolleys, parsed.trolleys||{});
+    state.trolleys.floors = Object.assign({}, def.trolleys.floors, (parsed.trolleys||{}).floors||{});
+    state.laundry = Object.assign({}, def.laundry, parsed.laundry||{});
+    state.storage = Object.assign({}, def.storage, parsed.storage||{});
+    state.storage.floors = Object.assign({}, def.storage.floors, (parsed.storage||{}).floors||{});
+    state.capacity = Object.assign({}, def.capacity, parsed.capacity||{});
+    state.capacity.floors = Object.assign({}, def.capacity.floors, (parsed.capacity||{}).floors||{});
+    state.towels = Object.assign({}, def.towels, parsed.towels||{});
+    state.towels.floors = Object.assign({}, def.towels.floors, (parsed.towels||{}).floors||{});
+    state.checklist = Object.assign({}, def.checklist, parsed.checklist||{});
+    state.orders = Object.assign({}, def.orders, parsed.orders||{});
+    state.notes = Object.assign({}, def.notes, parsed.notes||{});
+    state.settings = Object.assign({}, def.settings, parsed.settings||{});
+  }catch(e){
+    console.error('Failed to load data, starting fresh', e);
+    state = defaultState();
+  }
+}
+var saveTimer = null;
+function saveState(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e){ toast('Could not save — storage may be full or unavailable'); }
+  }, 120);
+}
+
+/* ============ UTIL ============ */
+function byId(id){ return document.getElementById(id); }
+function qsa(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+function pad2(n){ return n<10 ? '0'+n : ''+n; }
+function dateKey(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function todayKey(){ return dateKey(new Date()); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function clamp(n,min,max){ return Math.max(min,Math.min(max,n)); }
+function esc(s){ var d=document.createElement('div'); d.textContent = (s==null?'':s); return d.innerHTML; }
+function niceDate(d){
+  return d.toLocaleDateString(undefined,{weekday:'long', year:'numeric', month:'long', day:'numeric'});
+}
+function toast(msg){
+  var wrap = byId('toastWrap');
+  var t = document.createElement('div');
+  t.className='toast'; t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 3200);
+}
+function colorNameForPercent(p){
+  if(p < 40) return 'green';
+  if(p < 70) return 'amber';
+  if(p < 90) return 'orange';
+  return 'red';
+}
+function colorVar(name){
+  return { green:'var(--green)', amber:'var(--amber)', orange:'var(--orange)', red:'var(--red)' }[name];
+}
+function storageLabel(p){
+  if(p<=16) return 'Almost Empty';
+  if(p<=33) return '25%';
+  if(p<=50) return 'Half Full';
+  if(p<=67) return '75%';
+  if(p<=84) return 'Almost Full';
+  return 'Completely Full';
+}
+function towelPercent(status){
+  return {Empty:0, '25':25, '50':50, '75':75, Full:100}[status] || 0;
+}
+
+/* ============ RECURRING TASKS / CALENDAR LOGIC ============ */
+function recurringTasksForDate(date){
+  var dow = date.getDay(); // 0 Sun ... 6 Sat
+  var tasks = [];
+  if(dow===1) tasks.push({id:'mon-trolleys', label:'Trolleys', group:'Recurring'});
+  if(dow===2){
+    tasks.push({id:'tue-toiletpaper', label:'Toilet paper delivery', group:'Recurring'});
+    tasks.push({id:'tue-gm', label:'Send message to General Manager', group:'Recurring'});
+    tasks.push({id:'tue-basement', label:'Basement cleaning', group:'Recurring'});
+    tasks.push({id:'tue-501', label:'Room 501 — Linen change (22 pcs)', group:'Recurring'});
+  }
+  if(dow===3) tasks.push({id:'wed-trolleys', label:'Trolleys', group:'Recurring'});
+  if(dow===5){
+    tasks.push({id:'fri-trolleys', label:'Trolleys', group:'Recurring'});
+    tasks.push({id:'fri-501', label:'Room 501 — Linen change (22 pcs)', group:'Recurring'});
+  }
+  if(dow===0 || dow===6){
+    tasks.push({id:'we-wideroe', label:'Handle Widerøe', group:'Weekend'});
+    tasks.push({id:'we-dhl', label:'Handle DHL', group:'Weekend'});
+    tasks.push({id:'we-rooms', label:'Handle Rooms', group:'Weekend'});
+  }
+  var md = (date.getMonth()+1)+'-'+date.getDate();
+  if(md==='7-11') tasks.push({id:'special-0711', label:'Prepare to-do list & check everything', group:'Special date'});
+  if(md==='7-25') tasks.push({id:'special-0725', label:'Repeat inspection', group:'Special date'});
+  return tasks;
+}
+function customEventsForDate(date){
+  var k = dateKey(date);
+  return state.calendarEvents.filter(function(e){ return e.date===k; })
+    .map(function(e){ return {id:'evt-'+e.id, label:e.title, group:'Your event', isCustom:true, evtId:e.id}; });
+}
+function allTasksForDate(date){ return recurringTasksForDate(date).concat(customEventsForDate(date)); }
+function isTaskDone(dKey, taskId){ return !!(state.checklist.completions[dKey] && state.checklist.completions[dKey][taskId]); }
+function setTaskDone(dKey, taskId, done){
+  if(!state.checklist.completions[dKey]) state.checklist.completions[dKey] = {};
+  state.checklist.completions[dKey][taskId] = done;
+  saveState();
+}
+
+/* ============ NAVIGATION ============ */
+var currentSection = 'dashboard';
+function goTo(section){
+  currentSection = section;
+  qsa('.section').forEach(function(s){ s.classList.remove('active'); });
+  var el = byId('sec-'+section); if(el) el.classList.add('active');
+  qsa('.drawer-item').forEach(function(b){ b.classList.toggle('active', b.dataset.target===section); });
+  var titleMap = { dashboard:'Dashboard', trolleys:'Trolley Tracker', laundry:'Laundry Tracker', storage:'Dirty Linen Storage',
+    capacity:'Dirty Trolley Capacity', towels:'Towel Bags', checklist:'Daily Checklist', calendar:'Calendar',
+    orders:'Orders', notes:'Notes', stats:'Statistics', reports:'Reports', settings:'Settings' };
+  byId('topbarLabel').textContent = titleMap[section] || 'HSK Manager';
+  closeDrawer();
+  window.scrollTo(0,0);
+  renderSection(section);
+}
+function renderSection(section){
+  if(section==='dashboard') renderDashboard();
+  else if(section==='trolleys') renderTrolleys();
+  else if(section==='laundry') renderLaundry();
+  else if(section==='storage') renderStorage();
+  else if(section==='capacity') renderCapacity();
+  else if(section==='towels') renderTowels();
+  else if(section==='checklist') renderChecklist();
+  else if(section==='calendar') renderCalendar();
+  else if(section==='orders') renderOrders();
+  else if(section==='notes') renderNotes();
+  else if(section==='stats') renderStats();
+  else if(section==='reports') renderReportPreview();
+}
+function openDrawer(){ byId('drawer').classList.add('open'); byId('scrim').classList.add('open'); }
+function closeDrawer(){ byId('drawer').classList.remove('open'); byId('scrim').classList.remove('open'); }
+
+/* ============ DASHBOARD ============ */
+function computeDashboardStats(){
+  var cleanTotal = state.trolleys.f2Clean||0, dirtyTotal = state.trolleys.f2Dirty||0, unpackedTotal=0;
+  FLOORS.forEach(function(f){
+    var fl = state.trolleys.floors[f] || {unpacked:0,status:'clean'};
+    unpackedTotal += Number(fl.unpacked)||0;
+    if(fl.status==='clean') cleanTotal += Number(fl.unpacked)||0;
+    else if(fl.status==='dirty') dirtyTotal += Number(fl.unpacked)||0;
+    else { cleanTotal += (Number(fl.unpacked)||0)/2; dirtyTotal += (Number(fl.unpacked)||0)/2; }
+  });
+  cleanTotal += Number(state.trolleys.receivedToday)||0;
+  dirtyTotal += Number(state.trolleys.returnedToday)||0;
+
+  var storageSum=0; FLOORS.forEach(function(f){ storageSum += Number(state.storage.floors[f])||0; });
+  var storageAvg = Math.round(storageSum/FLOORS.length);
+
+  var towelsFull=0;
+  FLOORS.forEach(function(f){
+    var t = state.towels.floors[f];
+    if(t.bag1==='Full') towelsFull++;
+    if(t.bag2==='Full') towelsFull++;
+  });
+
+  return { cleanTotal:Math.round(cleanTotal), dirtyTotal:Math.round(dirtyTotal), unpackedTotal:unpackedTotal, storageAvg:storageAvg, towelsFull:towelsFull };
+}
+function renderDashboard(){
+  var now = new Date();
+  byId('dashDateLine').textContent = niceDate(now);
+  var s = computeDashboardStats();
+  byId('tileClean').querySelector('.v').textContent = s.cleanTotal;
+  byId('tileDirty').querySelector('.v').textContent = s.dirtyTotal;
+  byId('tileUnpacked').querySelector('.v').textContent = s.unpackedTotal;
+  var storTile = byId('tileStorage'); storTile.querySelector('.v').textContent = s.storageAvg+'%';
+  storTile.className = 'stat-tile ' + (s.storageAvg>=90?'bad':s.storageAvg>=70?'warn':'');
+  var towTile = byId('tileTowels'); towTile.querySelector('.v').textContent = s.towelsFull;
+  towTile.className = 'stat-tile ' + (s.towelsFull>0?'warn':'');
+
+  var tasks = allTasksForDate(now);
+  var dKey = todayKey();
+  var doneCount = tasks.filter(function(t){ return isTaskDone(dKey,t.id); }).length;
+  byId('tileTasks').querySelector('.v').textContent = (tasks.length-doneCount);
+  byId('dashTaskProgress').textContent = doneCount+' / '+tasks.length+' done';
+
+  var listEl = byId('dashTaskList');
+  if(tasks.length===0){
+    listEl.innerHTML = '<div class="empty-state"><div class="ic">🌤️</div><div class="t">Nothing recurring today</div><div class="d">Enjoy the quiet — check Calendar for anything upcoming.</div></div>';
+  } else {
+    listEl.innerHTML = tasks.map(function(t){
+      var checked = isTaskDone(dKey,t.id);
+      return '<label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;">'+
+        '<input type="checkbox" data-task="'+t.id+'" class="dashTaskCb" '+(checked?'checked':'')+' style="width:18px;height:18px;">'+
+        '<span style="flex:1;'+(checked?'text-decoration:line-through;color:var(--ink-soft);':'')+'">'+esc(t.label)+'</span>'+
+        '<span class="chip neutral">'+esc(t.group)+'</span></label>';
+    }).join('');
+    qsa('.dashTaskCb', listEl).forEach(function(cb){
+      cb.addEventListener('change', function(){ setTaskDone(dKey, cb.dataset.task, cb.checked); renderDashboard(); refreshAlertBell(); });
+    });
+  }
+}
+
+/* ============ TROLLEY TRACKER ============ */
+function renderTrolleys(){
+  byId('trReceived').value = state.trolleys.receivedToday || 0;
+  byId('trReturned').value = state.trolleys.returnedToday || 0;
+  byId('trF2Clean').value = state.trolleys.f2Clean || 0;
+  byId('trF2Dirty').value = state.trolleys.f2Dirty || 0;
+
+  var listEl = byId('trFloorList');
+  listEl.innerHTML = FLOORS.map(function(f){
+    var fl = state.trolleys.floors[f];
+    var statusColor = fl.status==='clean'?'green':fl.status==='dirty'?'red':'amber';
+    return '<div class="floor-row">'+
+      '<div class="floor-badge">F'+f+'</div>'+
+      '<div class="floor-main">'+
+        '<div class="row" style="gap:8px;align-items:center;">'+
+          '<input type="number" min="0" style="width:80px;" value="'+(fl.unpacked||0)+'" data-fl="'+f+'" class="trUnpackedInput">'+
+          '<select data-fl="'+f+'" class="trStatusSelect" style="width:auto;flex:1;">'+
+            '<option value="clean" '+(fl.status==='clean'?'selected':'')+'>Clean</option>'+
+            '<option value="dirty" '+(fl.status==='dirty'?'selected':'')+'>Dirty</option>'+
+            '<option value="mixed" '+(fl.status==='mixed'?'selected':'')+'>Mixed</option>'+
+          '</select>'+
+          '<span class="chip '+statusColor+'">'+fl.status+'</span>'+
+        '</div>'+
+      '</div></div>';
+  }).join('');
+
+  qsa('.trUnpackedInput', listEl).forEach(function(inp){
+    inp.addEventListener('input', function(){
+      state.trolleys.floors[inp.dataset.fl].unpacked = Number(inp.value)||0;
+      saveState(); updateTrTotals();
+    });
+  });
+  qsa('.trStatusSelect', listEl).forEach(function(sel){
+    sel.addEventListener('change', function(){
+      state.trolleys.floors[sel.dataset.fl].status = sel.value;
+      saveState(); renderTrolleys();
+    });
+  });
+  updateTrTotals();
+}
+function updateTrTotals(){
+  var total=0; FLOORS.forEach(function(f){ total += Number(state.trolleys.floors[f].unpacked)||0; });
+  byId('trTotals').textContent = 'Total unpacked: '+total;
+}
+function upsertDailyLog(arr, dKey, patch){
+  var entry = arr.find(function(e){ return e.date===dKey; });
+  if(!entry){ entry = {date:dKey}; arr.push(entry); }
+  Object.assign(entry, patch);
+  arr.sort(function(a,b){ return a.date<b.date?-1:1; });
+  while(arr.length>60) arr.shift();
+}
+['trReceived','trReturned','trF2Clean','trF2Dirty'].forEach(function(){}); // placeholder (wired in initEvents)
+
+/* ============ LAUNDRY TRACKER ============ */
+function renderLaundry(){
+  var q = (byId('laundrySearch').value||'').toLowerCase();
+  var rows = state.laundry.deliveries.map(function(d){ return Object.assign({kind:'Delivery'}, d); })
+    .concat(state.laundry.pickups.map(function(p){ return Object.assign({kind:'Pickup'}, p); }));
+  rows.sort(function(a,b){ return (b.date+b.time) > (a.date+a.time) ? 1 : -1; });
+  if(q) rows = rows.filter(function(r){ return (r.notes||'').toLowerCase().indexOf(q)>-1 || r.kind.toLowerCase().indexOf(q)>-1; });
+
+  var el = byId('laundryHistory');
+  if(rows.length===0){
+    el.innerHTML = '<div class="empty-state"><div class="ic">🚚</div><div class="t">No records yet</div><div class="d">Log a delivery or pickup above.</div></div>';
+    return;
+  }
+  el.innerHTML = '<table><tr><th>Date</th><th>Time</th><th>Type</th><th>Trolleys</th><th>Notes</th><th></th></tr>' +
+    rows.map(function(r){
+      return '<tr><td>'+esc(r.date)+'</td><td>'+esc(r.time||'—')+'</td><td>'+
+        '<span class="chip '+(r.kind==='Delivery'?'green':'amber')+'">'+r.kind+'</span></td>'+
+        '<td class="num">'+esc(r.trolleys)+'</td><td>'+esc(r.notes||'')+'</td>'+
+        '<td><button class="link-btn" data-id="'+r.id+'" data-kind="'+r.kind+'">Delete</button></td></tr>';
+    }).join('') + '</table>';
+
+  qsa('.link-btn', el).forEach(function(b){
+    b.addEventListener('click', function(){
+      var arr = b.dataset.kind==='Delivery' ? state.laundry.deliveries : state.laundry.pickups;
+      var idx = arr.findIndex(function(x){ return x.id===b.dataset.id; });
+      if(idx>-1){ arr.splice(idx,1); saveState(); renderLaundry(); renderStats(); }
+    });
+  });
+}
+
+/* ============ DIRTY LINEN STORAGE ============ */
+function renderStorage(){
+  var el = byId('storageFloorList');
+  el.innerHTML = FLOORS.map(function(f){
+    var p = Number(state.storage.floors[f])||0;
+    var c = colorNameForPercent(p);
+    return '<div class="floor-row" style="display:block;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+        '<div style="font-weight:800;">Floor '+f+'</div>'+
+        '<span class="chip '+c+'">'+storageLabel(p)+' · '+p+'%</span>'+
+      '</div>'+
+      '<input type="range" min="0" max="100" value="'+p+'" data-fl="'+f+'" class="storageSlider" style="width:100%;">'+
+      '<div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:'+colorVar(c)+';"></div></div>'+
+    '</div>';
+  }).join('');
+  qsa('.storageSlider', el).forEach(function(s){
+    s.addEventListener('input', function(){
+      state.storage.floors[s.dataset.fl] = Number(s.value);
+      saveState();
+      var sum=0; FLOORS.forEach(function(f){ sum += Number(state.storage.floors[f])||0; });
+      upsertDailyLog(state.storage.dailyLog, todayKey(), {avgPercent: Math.round(sum/FLOORS.length)});
+      renderStorage();
+    });
+  });
+}
+
+/* ============ DIRTY TROLLEY CAPACITY ============ */
+function renderCapacity(){
+  var el = byId('capacityFloorList');
+  el.innerHTML = FLOORS.map(function(f){
+    var p = Number(state.capacity.floors[f])||0;
+    var c = colorNameForPercent(p);
+    return '<div class="floor-row">'+
+      '<div class="floor-badge">F'+f+'</div>'+
+      '<div class="floor-main">'+
+        '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<select data-fl="'+f+'" class="capSelect" style="width:auto;flex:1;">'+
+          [0,25,50,75,100].map(function(v){ return '<option value="'+v+'" '+(p===v?'selected':'')+'>'+v+'%</option>'; }).join('')+
+        '</select>'+
+        '<span class="chip '+c+'">'+c+'</span>'+
+        '</div>'+
+        '<div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:'+colorVar(c)+';"></div></div>'+
+      '</div></div>';
+  }).join('');
+  qsa('.capSelect', el).forEach(function(s){
+    s.addEventListener('change', function(){
+      state.capacity.floors[s.dataset.fl] = Number(s.value);
+      saveState(); renderCapacity();
+    });
+  });
+}
+
+/* ============ TOWEL BAGS ============ */
+var TOWEL_OPTIONS = ['Empty','25','50','75','Full'];
+function renderTowels(){
+  var el = byId('towelFloorList');
+  el.innerHTML = FLOORS.map(function(f){
+    var t = state.towels.floors[f];
+    return '<div class="card" style="margin-bottom:10px;">'+
+      '<div class="card-head"><h3>Floor '+f+'</h3></div>'+
+      ['bag1','bag2'].map(function(bagKey, i){
+        var status = t[bagKey];
+        var p = towelPercent(status);
+        var c = colorNameForPercent(p===100?100:p);
+        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(i===0?'10px':'0')+';">'+
+          '<div style="width:52px;font-size:12px;font-weight:700;color:var(--ink-soft);">Bag '+(i+1)+'</div>'+
+          '<select data-fl="'+f+'" data-bag="'+bagKey+'" class="towelSelect" style="flex:1;">'+
+            TOWEL_OPTIONS.map(function(o){ return '<option value="'+o+'" '+(status===o?'selected':'')+'>'+o+(o!=='Empty'&&o!=='Full'?'%':'')+'</option>'; }).join('')+
+          '</select>'+
+          '<span class="chip '+c+'">'+status+'</span>'+
+          (status==='Full' ? '<button class="btn sm accent" data-fl="'+f+'" data-bag="'+bagKey+'">Collected</button>' : '')+
+        '</div>';
+      }).join('') +
+    '</div>';
+  }).join('');
+
+  qsa('.towelSelect', el).forEach(function(s){
+    s.addEventListener('change', function(){
+      var f=s.dataset.fl, bagKey=s.dataset.bag, prev = state.towels.floors[f][bagKey];
+      state.towels.floors[f][bagKey] = s.value;
+      saveState();
+      if(s.value==='Full' && prev!=='Full'){
+        notify('Collect towel bags', 'Floor '+f+' — bag is full');
+      }
+      renderTowels(); refreshAlertBell();
+    });
+  });
+  qsa('button.btn[data-bag]', el).forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var f=btn.dataset.fl, bagKey=btn.dataset.bag;
+      state.towels.floors[f][bagKey]='Empty';
+      state.towels.collectionLog.push({date: todayKey(), floor:f, bag:bagKey});
+      saveState(); renderTowels(); renderStats(); refreshAlertBell();
+      toast('Marked collected — Floor '+f);
+    });
+  });
+}
+
+/* ============ CHECKLIST ============ */
+var checklistCursor = new Date();
+function renderChecklist(){
+  byId('checklistDateLine').textContent = niceDate(checklistCursor);
+  var dKey = dateKey(checklistCursor);
+  var tasks = allTasksForDate(checklistCursor);
+  var el = byId('checklistList');
+  if(tasks.length===0){
+    el.innerHTML = '<div class="empty-state"><div class="ic">📋</div><div class="t">No tasks scheduled</div><div class="d">Nothing recurring falls on this day.</div></div>';
+    return;
+  }
+  el.innerHTML = tasks.map(function(t){
+    var checked = isTaskDone(dKey,t.id);
+    return '<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;">'+
+      '<input type="checkbox" data-task="'+t.id+'" class="clCb" '+(checked?'checked':'')+' style="width:19px;height:19px;">'+
+      '<span style="flex:1;'+(checked?'text-decoration:line-through;color:var(--ink-soft);':'')+'">'+esc(t.label)+'</span>'+
+      '<span class="chip neutral">'+esc(t.group)+'</span></label>';
+  }).join('');
+  qsa('.clCb', el).forEach(function(cb){
+    cb.addEventListener('change', function(){ setTaskDone(dKey, cb.dataset.task, cb.checked); renderChecklist(); refreshAlertBell(); });
+  });
+}
+
+/* ============ CALENDAR ============ */
+var calCursor = new Date(); calCursor.setDate(1);
+var calSelectedDate = new Date();
+function renderCalendar(){
+  byId('calMonthLabel').textContent = MONTH_LABELS[calCursor.getMonth()] + ' ' + calCursor.getFullYear();
+  byId('calDowRow').innerHTML = DOW_LABELS.map(function(d){ return '<div class="cal-dow">'+d+'</div>'; }).join('');
+
+  var year = calCursor.getFullYear(), month = calCursor.getMonth();
+  var firstDay = new Date(year, month, 1);
+  var startIdx = (firstDay.getDay()+6)%7; // Monday-first
+  var daysInMonth = new Date(year, month+1, 0).getDate();
+  var todayK = todayKey();
+
+  var cells = [];
+  for(var i=0;i<startIdx;i++) cells.push('<div class="cal-cell empty"></div>');
+  for(var d=1; d<=daysInMonth; d++){
+    var dt = new Date(year, month, d);
+    var k = dateKey(dt);
+    var rec = recurringTasksForDate(dt);
+    var special = rec.some(function(t){ return t.group==='Special date'; });
+    var hasRecurring = rec.some(function(t){ return t.group!=='Special date'; });
+    var hasCustom = state.calendarEvents.some(function(e){ return e.date===k; });
+    var dots = '';
+    if(hasRecurring) dots += '<span class="dot" style="background:var(--accent);"></span>';
+    if(special) dots += '<span class="dot" style="background:var(--red);"></span>';
+    if(hasCustom) dots += '<span class="dot" style="background:var(--green);"></span>';
+    cells.push('<div class="cal-cell'+(k===todayK?' today':'')+'" data-date="'+k+'"><div>'+d+'</div><div class="dots">'+dots+'</div></div>');
+  }
+  byId('calGrid').innerHTML = cells.join('');
+  qsa('.cal-cell[data-date]', byId('calGrid')).forEach(function(c){
+    c.addEventListener('click', function(){
+      var parts = c.dataset.date.split('-');
+      calSelectedDate = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+      renderCalDay();
+    });
+  });
+  renderCalDay();
+}
+function renderCalDay(){
+  byId('calDaySelLabel').textContent = niceDate(calSelectedDate);
+  var tasks = allTasksForDate(calSelectedDate);
+  var el = byId('calDayTasks');
+  if(tasks.length===0){
+    el.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);">Nothing scheduled on this day.</p>';
+  } else {
+    el.innerHTML = tasks.map(function(t){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;">'+
+        '<span style="flex:1;">'+esc(t.label)+'</span><span class="chip neutral">'+esc(t.group)+'</span>'+
+        (t.isCustom ? '<button class="link-btn" data-evt="'+t.evtId+'">Remove</button>' : '') +
+      '</div>';
+    }).join('');
+    qsa('.link-btn[data-evt]', el).forEach(function(b){
+      b.addEventListener('click', function(){
+        state.calendarEvents = state.calendarEvents.filter(function(e){ return e.id!==b.dataset.evt; });
+        saveState(); renderCalendar();
+      });
+    });
+  }
+}
+
+/* ============ ORDERS ============ */
+function addOrder(item, qty){
+  state.orders.history.unshift({ id:uid(), date: todayKey(), item:item, qty:qty });
+  saveState(); renderOrders();
+  toast('Order logged: '+item);
+}
+function renderOrders(){
+  var el = byId('orderHistory');
+  if(state.orders.history.length===0){
+    el.innerHTML = '<div class="empty-state"><div class="ic">🛒</div><div class="t">No orders yet</div><div class="d">Use the buttons above to log a linen order.</div></div>';
+    return;
+  }
+  el.innerHTML = '<table><tr><th>Date</th><th>Item</th><th>Qty</th><th></th></tr>' +
+    state.orders.history.map(function(o){
+      return '<tr><td>'+esc(o.date)+'</td><td>'+esc(o.item)+'</td><td class="num">'+esc(o.qty)+'</td>'+
+        '<td><button class="link-btn" data-id="'+o.id+'">Delete</button></td></tr>';
+    }).join('') + '</table>';
+  qsa('.link-btn', el).forEach(function(b){
+    b.addEventListener('click', function(){
+      state.orders.history = state.orders.history.filter(function(o){ return o.id!==b.dataset.id; });
+      saveState(); renderOrders();
+    });
+  });
+}
+
+/* ============ NOTES ============ */
+function renderNotes(){
+  var q = (byId('noteSearch').value||'').toLowerCase();
+  var list = state.notes.list.filter(function(n){ return !q || n.text.toLowerCase().indexOf(q)>-1; });
+  list.sort(function(a,b){ if(!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1; return b.date>a.date?1:-1; });
+  var el = byId('notesList');
+  if(list.length===0){
+    el.innerHTML = '<div class="empty-state"><div class="ic">📝</div><div class="t">No notes</div><div class="d">Write your first note above.</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(function(n){
+    return '<div class="note-item"><div class="meta"><span class="date">'+esc(n.date)+'</span>'+
+      '<span><button class="pin-btn '+(n.pinned?'pinned':'')+'" data-id="'+n.id+'" data-act="pin">📌</button>'+
+      '<button class="pin-btn" data-id="'+n.id+'" data-act="del">🗑</button></span></div>'+
+      '<div class="txt">'+esc(n.text)+'</div></div>';
+  }).join('');
+  qsa('.pin-btn', el).forEach(function(b){
+    b.addEventListener('click', function(){
+      var n = state.notes.list.find(function(x){ return x.id===b.dataset.id; });
+      if(!n) return;
+      if(b.dataset.act==='pin') n.pinned = !n.pinned;
+      else state.notes.list = state.notes.list.filter(function(x){ return x.id!==b.dataset.id; });
+      saveState(); renderNotes();
+    });
+  });
+}
+
+/* ============ STATISTICS (dependency-free bar charts) ============ */
+function renderBarPairs(container, items, aLabel, bLabel){
+  if(items.length===0){ container.innerHTML = '<div class="empty-state"><div class="d">Not enough data yet — keep logging daily.</div></div>'; return; }
+  var max = 1;
+  items.forEach(function(it){ max = Math.max(max, it.a||0, it.b||0); });
+  var html = '<div style="display:flex;gap:6px;margin-bottom:8px;font-size:11px;color:var(--ink-soft);">'+
+    '<span><span style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:2px;margin-right:4px;"></span>'+aLabel+'</span>'+
+    '<span><span style="display:inline-block;width:8px;height:8px;background:var(--ink-soft);border-radius:2px;margin-right:4px;"></span>'+bLabel+'</span></div>';
+  html += '<div style="display:flex;align-items:flex-end;gap:8px;height:110px;overflow-x:auto;padding-bottom:2px;">';
+  items.forEach(function(it){
+    var ha = Math.round((it.a||0)/max*90), hb = Math.round((it.b||0)/max*90);
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;width:34px;">'+
+      '<div style="display:flex;align-items:flex-end;gap:2px;height:92px;">'+
+      '<div title="'+it.a+'" style="width:12px;height:'+Math.max(ha,2)+'px;background:var(--accent);border-radius:3px 3px 0 0;"></div>'+
+      '<div title="'+it.b+'" style="width:12px;height:'+Math.max(hb,2)+'px;background:var(--ink-soft);border-radius:3px 3px 0 0;"></div>'+
+      '</div><div style="font-size:9.5px;color:var(--ink-soft);">'+it.label+'</div></div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+function renderBarSingle(container, items){
+  if(items.length===0){ container.innerHTML = '<div class="empty-state"><div class="d">Not enough data yet.</div></div>'; return; }
+  var max = 1; items.forEach(function(it){ max = Math.max(max, it.v||0); });
+  var html = '<div style="display:flex;align-items:flex-end;gap:8px;height:110px;overflow-x:auto;padding-bottom:2px;">';
+  items.forEach(function(it){
+    var h = Math.round((it.v||0)/max*92);
+    var c = it.color || 'var(--accent)';
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;width:34px;">'+
+      '<div title="'+it.v+'" style="width:16px;height:'+Math.max(h,2)+'px;background:'+c+';border-radius:3px 3px 0 0;"></div>'+
+      '<div style="font-size:9.5px;color:var(--ink-soft);">'+it.label+'</div></div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+function shortDate(k){ var p=k.split('-'); return p[2]+'/'+p[1]; }
+function renderStats(){
+  var trolleyItems = state.trolleys.dailyLog.slice(-14).map(function(e){ return {label:shortDate(e.date), a:e.received||0, b:e.returned||0}; });
+  renderBarPairs(byId('chartTrolley'), trolleyItems, 'Received', 'Returned');
+
+  var storageItems = state.storage.dailyLog.slice(-14).map(function(e){ return {label:shortDate(e.date), v:e.avgPercent||0, color: colorVar(colorNameForPercent(e.avgPercent||0))}; });
+  renderBarSingle(byId('chartStorage'), storageItems);
+
+  var byDate = {};
+  state.laundry.deliveries.forEach(function(d){ byDate[d.date] = byDate[d.date]||{a:0,b:0}; byDate[d.date].a += Number(d.trolleys)||0; });
+  state.laundry.pickups.forEach(function(p){ byDate[p.date] = byDate[p.date]||{a:0,b:0}; byDate[p.date].b += Number(p.trolleys)||0; });
+  var laundryDates = Object.keys(byDate).sort().slice(-14);
+  renderBarPairs(byId('chartLaundry'), laundryDates.map(function(k){ return {label:shortDate(k), a:byDate[k].a, b:byDate[k].b}; }), 'Delivered', 'Picked up');
+
+  var towelCounts = {}; FLOORS.forEach(function(f){ towelCounts[f]=0; });
+  state.towels.collectionLog.forEach(function(e){ towelCounts[e.floor] = (towelCounts[e.floor]||0)+1; });
+  renderBarSingle(byId('chartTowels'), FLOORS.map(function(f){ return {label:'F'+f, v:towelCounts[f]||0, color:'var(--accent)'}; }));
+
+  var avgTrolley = trolleyItems.length ? Math.round(trolleyItems.reduce(function(s,i){ return s+i.a+i.b; },0)/trolleyItems.length) : 0;
+  byId('statAvgTrolley').textContent = avgTrolley;
+  var totalDeliv = state.laundry.deliveries.length;
+  var avgLaundry = totalDeliv ? Math.round(state.laundry.deliveries.reduce(function(s,d){ return s+(Number(d.trolleys)||0); },0)/totalDeliv) : 0;
+  byId('statAvgLaundry').textContent = avgLaundry;
+}
+
+/* ============ REPORTS ============ */
+function buildReportHtml(){
+  var now = new Date(); var dKey = todayKey();
+  var s = computeDashboardStats();
+  var tasks = allTasksForDate(now);
+  var done = tasks.filter(function(t){ return isTaskDone(dKey,t.id); });
+  var pending = tasks.filter(function(t){ return !isTaskDone(dKey,t.id); });
+  var todaysOrders = state.orders.history.filter(function(o){ return o.date===dKey; });
+  var lastDelivery = state.laundry.deliveries.slice().sort(function(a,b){ return (b.date+b.time)>(a.date+a.time)?1:-1; })[0];
+  var lastPickup = state.laundry.pickups.slice().sort(function(a,b){ return (b.date+b.time)>(a.date+a.time)?1:-1; })[0];
+
+  var storageRows = FLOORS.map(function(f){ return '<tr><td>Floor '+f+'</td><td>'+(state.storage.floors[f]||0)+'%</td><td>'+storageLabel(state.storage.floors[f]||0)+'</td></tr>'; }).join('');
+  var towelRows = FLOORS.map(function(f){ var t=state.towels.floors[f]; return '<tr><td>Floor '+f+'</td><td>'+t.bag1+'</td><td>'+t.bag2+'</td></tr>'; }).join('');
+
+  return '<h2 style="margin-bottom:2px;">HSK Daily Report</h2>'+
+    '<p style="color:#555;margin-bottom:14px;">'+niceDate(now)+'</p>'+
+    '<h3>Trolleys</h3><p>Clean: '+s.cleanTotal+' · Dirty: '+s.dirtyTotal+' · Unpacked total: '+s.unpackedTotal+'</p>'+
+    '<h3>Laundry</h3><p>Last delivery: '+(lastDelivery? lastDelivery.date+' '+lastDelivery.time+' ('+lastDelivery.trolleys+' trolleys)':'—')+'<br>'+
+      'Last pickup: '+(lastPickup? lastPickup.date+' '+lastPickup.time+' ('+lastPickup.trolleys+' trolleys)':'—')+'</p>'+
+    '<h3>Dirty linen storage</h3><table border="1" cellpadding="5" style="border-collapse:collapse;width:100%;margin-bottom:10px;"><tr><th>Floor</th><th>%</th><th>Status</th></tr>'+storageRows+'</table>'+
+    '<h3>Towel bags</h3><table border="1" cellpadding="5" style="border-collapse:collapse;width:100%;margin-bottom:10px;"><tr><th>Floor</th><th>Bag 1</th><th>Bag 2</th></tr>'+towelRows+'</table>'+
+    '<h3>Tasks completed ('+done.length+')</h3><ul>'+(done.map(function(t){ return '<li>'+esc(t.label)+'</li>'; }).join('')||'<li>None yet</li>')+'</ul>'+
+    '<h3>Pending tasks ('+pending.length+')</h3><ul>'+(pending.map(function(t){ return '<li>'+esc(t.label)+'</li>'; }).join('')||'<li>None</li>')+'</ul>'+
+    '<h3>Items ordered today</h3><ul>'+(todaysOrders.map(function(o){ return '<li>'+esc(o.item)+' ('+o.qty+')</li>'; }).join('')||'<li>None</li>')+'</ul>'+
+    '<h3>Notes</h3><p>'+esc(state.quickNotes||'—')+'</p>';
+}
+function renderReportPreview(){ byId('reportPreview').innerHTML = buildReportHtml(); }
+
+/* ============ NOTIFICATIONS ============ */
+var notifiedFullBags = {};
+function notify(title, body){
+  if('Notification' in window && Notification.permission==='granted'){
+    try{ new Notification(title, {body: body}); return; }catch(e){}
+  }
+  toast(title+' — '+body);
+}
+function refreshAlertBell(){
+  var s = computeDashboardStats();
+  var now = new Date(); var dKey = todayKey();
+  var tasks = allTasksForDate(now);
+  var pending = tasks.filter(function(t){ return !isTaskDone(dKey,t.id); }).length;
+  var hasAlert = (s.towelsFull>0) || (pending>0 && now.getHours()>=14);
+  byId('bellBtn').classList.toggle('has-alert', hasAlert);
+}
+function checkReminders(){
+  var now = new Date(); var dKey = todayKey();
+  FLOORS.forEach(function(f){
+    ['bag1','bag2'].forEach(function(bagKey){
+      var key = f+'-'+bagKey;
+      if(state.towels.floors[f][bagKey]==='Full'){
+        if(!notifiedFullBags[key]){ notify('Collect towel bags', 'Floor '+f+' has a full bag'); notifiedFullBags[key]=true; }
+      } else { notifiedFullBags[key]=false; }
+    });
+  });
+  if(now.getHours()>=14 && state.settings.lastTaskReminderDate!==dKey){
+    var tasks = allTasksForDate(now);
+    var pending = tasks.filter(function(t){ return !isTaskDone(dKey,t.id); });
+    if(pending.length>0){
+      notify('Tasks still pending today', pending.length+' task(s) not yet done');
+      state.settings.lastTaskReminderDate = dKey; saveState();
+    }
+  }
+  var md = (now.getMonth()+1)+'-'+now.getDate();
+  if((md==='7-11' || md==='7-25') && state.settings.lastSpecialReminderDate!==dKey){
+    notify('Special date today', md==='7-11' ? 'Prepare to-do list & check everything' : 'Repeat inspection');
+    state.settings.lastSpecialReminderDate = dKey; saveState();
+  }
+  refreshAlertBell();
+}
+
+/* ============ INIT / EVENTS ============ */
+function applyTheme(){
+  document.body.dataset.theme = state.settings.theme;
+  byId('darkModeToggle').checked = state.settings.theme==='dark';
+}
+function initEvents(){
+  byId('menuBtn').addEventListener('click', openDrawer);
+  byId('scrim').addEventListener('click', closeDrawer);
+  qsa('.drawer-item').forEach(function(b){ b.addEventListener('click', function(){ goTo(b.dataset.target); }); });
+  qsa('.quicklink').forEach(function(b){ b.addEventListener('click', function(){ goTo(b.dataset.target); }); });
+  byId('bellBtn').addEventListener('click', function(){ goTo('checklist'); });
+
+  byId('quickNotes').value = state.quickNotes || '';
+  byId('quickNotes').addEventListener('input', function(e){ state.quickNotes = e.target.value; saveState(); });
+
+  // Trolleys
+  byId('trReceived').addEventListener('input', function(e){ state.trolleys.receivedToday = Number(e.target.value)||0; saveState(); upsertDailyLog(state.trolleys.dailyLog, todayKey(), {received: state.trolleys.receivedToday}); });
+  byId('trReturned').addEventListener('input', function(e){ state.trolleys.returnedToday = Number(e.target.value)||0; saveState(); upsertDailyLog(state.trolleys.dailyLog, todayKey(), {returned: state.trolleys.returnedToday}); });
+  byId('trF2Clean').addEventListener('input', function(e){ state.trolleys.f2Clean = Number(e.target.value)||0; saveState(); });
+  byId('trF2Dirty').addEventListener('input', function(e){ state.trolleys.f2Dirty = Number(e.target.value)||0; saveState(); });
+
+  // Laundry tabs
+  qsa('.tabbtn[data-lt]').forEach(function(b){
+    b.addEventListener('click', function(){
+      qsa('.tabbtn[data-lt]').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      byId('ltDeliveryForm').style.display = b.dataset.lt==='delivery' ? 'block':'none';
+      byId('ltPickupForm').style.display = b.dataset.lt==='pickup' ? 'block':'none';
+    });
+  });
+  byId('ldDate').value = todayKey();
+  byId('lpDate').value = todayKey();
+  byId('ldSave').addEventListener('click', function(){
+    var trolleys = Number(byId('ldTrolleys').value)||0;
+    state.laundry.deliveries.push({id:uid(), date:byId('ldDate').value||todayKey(), time:byId('ldTime').value||'', trolleys:trolleys, notes:byId('ldNotes').value||''});
+    saveState(); byId('ldTrolleys').value=''; byId('ldNotes').value=''; renderLaundry(); renderStats(); toast('Delivery saved');
+  });
+  byId('lpSave').addEventListener('click', function(){
+    var trolleys = Number(byId('lpTrolleys').value)||0;
+    state.laundry.pickups.push({id:uid(), date:byId('lpDate').value||todayKey(), time:byId('lpTime').value||'', trolleys:trolleys, notes:byId('lpNotes').value||''});
+    saveState(); byId('lpTrolleys').value=''; byId('lpNotes').value=''; renderLaundry(); renderStats(); toast('Pickup saved');
+  });
+  byId('laundrySearch').addEventListener('input', renderLaundry);
+
+  // Checklist nav
+  byId('clPrev').addEventListener('click', function(){ checklistCursor.setDate(checklistCursor.getDate()-1); renderChecklist(); });
+  byId('clNext').addEventListener('click', function(){ checklistCursor.setDate(checklistCursor.getDate()+1); renderChecklist(); });
+  byId('clToday').addEventListener('click', function(){ checklistCursor = new Date(); renderChecklist(); });
+
+  // Calendar nav
+  byId('calPrevM').addEventListener('click', function(){ calCursor.setMonth(calCursor.getMonth()-1); renderCalendar(); });
+  byId('calNextM').addEventListener('click', function(){ calCursor.setMonth(calCursor.getMonth()+1); renderCalendar(); });
+  byId('calAddEvent').addEventListener('click', function(){
+    var title = byId('calNewEventTitle').value.trim();
+    if(!title) return;
+    state.calendarEvents.push({id:uid(), date:dateKey(calSelectedDate), title:title});
+    saveState(); byId('calNewEventTitle').value=''; renderCalendar(); toast('Event added');
+  });
+
+  // Orders
+  byId('orderBoth').addEventListener('click', function(){ addOrder('2 Mixed Towel Pallets', 2); addOrder('2 Mixed Bed Sheet Pallets', 2); });
+  byId('orderTowels').addEventListener('click', function(){ addOrder('2 Mixed Towel Pallets', 2); });
+  byId('orderSheets').addEventListener('click', function(){ addOrder('2 Mixed Bed Sheet Pallets', 2); });
+
+  // Notes
+  byId('addNoteBtn').addEventListener('click', function(){
+    var txt = byId('newNoteText').value.trim();
+    if(!txt) return;
+    state.notes.list.unshift({id:uid(), text:txt, pinned:false, date:todayKey()});
+    saveState(); byId('newNoteText').value=''; renderNotes(); toast('Note added');
+  });
+  byId('noteSearch').addEventListener('input', renderNotes);
+
+  // Reports
+  byId('genReportBtn').addEventListener('click', function(){
+    byId('printArea').innerHTML = buildReportHtml();
+    setTimeout(function(){ window.print(); }, 60);
+  });
+
+  // Settings
+  byId('darkModeToggle').addEventListener('change', function(e){
+    state.settings.theme = e.target.checked ? 'dark' : 'light'; saveState(); applyTheme();
+  });
+  byId('notifBtn').addEventListener('click', function(){
+    if(!('Notification' in window)){ toast('Notifications are not supported in this browser'); return; }
+    Notification.requestPermission().then(function(p){
+      state.settings.notifEnabled = (p==='granted'); saveState();
+      byId('notifBtn').textContent = p==='granted' ? 'Enabled ✓' : 'Enable';
+      toast(p==='granted' ? 'Notifications enabled' : 'Notifications blocked');
+    });
+  });
+  byId('backupBtn').addEventListener('click', function(){
+    var blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'hsk-manager-backup-'+todayKey()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('Backup downloaded');
+  });
+  byId('restoreBtn').addEventListener('click', function(){ byId('restoreFile').click(); });
+  byId('restoreFile').addEventListener('change', function(e){
+    var file = e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        var parsed = JSON.parse(ev.target.result);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        loadState(); applyTheme(); goTo(currentSection);
+        toast('Backup restored');
+      }catch(err){ toast('That file could not be read'); }
+    };
+    reader.readAsText(file);
+  });
+  byId('exportCsvBtn').addEventListener('click', exportCsv);
+  byId('resetBtn').addEventListener('click', function(){
+    if(confirm('This erases all HSK Manager data on this device. This cannot be undone. Continue?')){
+      localStorage.removeItem(STORAGE_KEY);
+      loadState(); applyTheme(); goTo('dashboard');
+      toast('All data erased');
+    }
+  });
+}
+function csvEscape(v){ var s = (v==null?'':String(v)); if(/[",\n]/.test(s)) s = '"'+s.replace(/"/g,'""')+'"'; return s; }
+function exportCsv(){
+  var lines = [['Section','Field1','Field2','Field3','Field4','Field5'].join(',')];
+  FLOORS.forEach(function(f){
+    var fl = state.trolleys.floors[f];
+    lines.push(['Trolleys', 'Floor '+f, fl.unpacked, fl.status, '', ''].map(csvEscape).join(','));
+  });
+  state.laundry.deliveries.forEach(function(d){ lines.push(['Laundry Delivery', d.date, d.time, d.trolleys, d.notes, ''].map(csvEscape).join(',')); });
+  state.laundry.pickups.forEach(function(p){ lines.push(['Laundry Pickup', p.date, p.time, p.trolleys, p.notes, ''].map(csvEscape).join(',')); });
+  FLOORS.forEach(function(f){ lines.push(['Dirty Linen Storage', 'Floor '+f, state.storage.floors[f]+'%', '', '', ''].map(csvEscape).join(',')); });
+  FLOORS.forEach(function(f){ lines.push(['Dirty Trolley Capacity', 'Floor '+f, state.capacity.floors[f]+'%', '', '', ''].map(csvEscape).join(',')); });
+  FLOORS.forEach(function(f){ var t=state.towels.floors[f]; lines.push(['Towel Bags', 'Floor '+f, t.bag1, t.bag2, '', ''].map(csvEscape).join(',')); });
+  state.orders.history.forEach(function(o){ lines.push(['Order', o.date, o.item, o.qty, '', ''].map(csvEscape).join(',')); });
+  state.notes.list.forEach(function(n){ lines.push(['Note', n.date, n.text, n.pinned?'Pinned':'', '', ''].map(csvEscape).join(',')); });
+  var blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hsk-manager-export-'+todayKey()+'.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('CSV exported');
+}
+
+function init(){
+  loadState();
+  applyTheme();
+  initEvents();
+  goTo('dashboard');
+  refreshAlertBell();
+  setInterval(checkReminders, 3*60*1000);
+  checkReminders();
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkReminders(); });
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
